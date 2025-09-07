@@ -35,7 +35,8 @@ def train():
     log_every = 50
     save_every = 1000
 
-    losses = []
+    losses_dir = []
+    losses_dist = []
 
     for epoch in range(num_epochs):
         for image, camera_pos, camera_front, sphere_dir, distance in dataloader:
@@ -50,14 +51,17 @@ def train():
             loss_dir = loss_fn_dir(out_dir, sphere_dir)
             loss_dist = loss_fn_dist(out_dist, distance)
             total_loss = loss_dir + loss_dist
-            losses.append(total_loss.item())
+            losses_dir.append(loss_dir.item())
+            losses_dist.append(loss_dist.item())
             total_loss.backward()
             optimizer.step()
 
             if count > 0 and count % log_every == 0:
-                avg_loss = sum(losses) / len(losses)
-                losses = []
-                print("loss is", avg_loss)
+                avg_loss_dir = sum(losses_dir) / len(losses_dir)
+                losses_dir = []
+                avg_loss_dist = sum(losses_dist) / len(losses_dist)
+                losses_dist = []
+                print(f"loss of direction: {avg_loss_dir:.4f}, loss of distance: {avg_loss_dist:.4f}")
 
             if count > 0 and count % save_every == 0:
                 torch.save(model.state_dict(), checkpoint_pth)

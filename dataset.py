@@ -2,9 +2,10 @@ import torch
 from torch.utils.data import Dataset
 import cv2
 import os
-from util import read_json
+from util import read_json, save_pickle, read_pickle
 import numpy as np
 from tqdm import trange
+
 
 
 class DirectionDataset(Dataset):
@@ -12,15 +13,21 @@ class DirectionDataset(Dataset):
         length1 = len(os.listdir(state_dir))
         length2 = len(os.listdir(image_dir))
         length = min(length1, length2)
-        self.state_list = []
-        self.image_list = []
-        for idx in trange(length):
-            state_path = os.path.join(state_dir, f"{idx}.json")
-            state = read_json(state_path)
-            image_path = os.path.join(image_dir, f"{idx}.png")
-            image = cv2.imread(image_path)
-            self.state_list.append(state)
-            self.image_list.append(image)
+        if os.path.exists("data.pkl"):
+            data = read_pickle("data.pkl")
+            self.state_list = data["state"]
+            self.image_list = data["image"]
+        else:
+            self.state_list = []
+            self.image_list = []
+            for idx in trange(length):
+                state_path = os.path.join(state_dir, f"{idx}.json")
+                state = read_json(state_path)
+                image_path = os.path.join(image_dir, f"{idx}.png")
+                image = cv2.imread(image_path)
+                self.state_list.append(state)
+                self.image_list.append(image)
+            self.cache()
 
     def __getitem__(self, idx):
         state = self.state_list[idx]
@@ -38,6 +45,13 @@ class DirectionDataset(Dataset):
         sphere_dir = torch.tensor(sphere_dir, dtype=torch.float)
         distance = torch.tensor(distance, dtype=torch.float).reshape(1)
         return image, camera_pos, camera_front, sphere_dir, distance
+
+    def cache(self):
+        data = {
+            "state": self.state_list,
+            "image": self.image_list
+        }
+        save_pickle(data, "data.pkl")
 
     def __len__(self):
         return len(self.state_list)

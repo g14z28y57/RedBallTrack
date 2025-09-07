@@ -1,5 +1,6 @@
 import json
 import numpy as np
+import pickle
 
 
 def compute_direction(start, end):
@@ -18,3 +19,11 @@ def save_json(data, path):
 def read_json(path):
     with open(path, "r") as f:
         return json.load(f)
+
+
+def save_pickle(data, path):
+    pickle.dump(data, path)
+
+
+def read_pickle(path):
+    return pickle.load(path)
