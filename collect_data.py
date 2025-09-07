@@ -134,16 +134,11 @@ def take_photo_wrapper(idx):
     # --- 使用示例 ---
     # 设置参数
     plane_size = 20
-    sphere_pos = [random.uniform(-10, 10), random.uniform(-10, 10), 0] # 小球在原点
+    sphere_pos = [random.uniform(-10, 10), random.uniform(-10, 10), 0]  # 小球在原点
     sphere_radius = 1
-    camera_degree = random.uniform(0, 360)
-    camera_dist = random.uniform(10, 20)
-    camera_x = camera_dist * math.cos(camera_degree)
-    camera_y = camera_dist * math.sin(camera_degree)
-    camera_h = random.uniform(5, 12)
-    camera_pos = [camera_x, camera_y, camera_h]  # 相机位置
-    focal_height = random.uniform(-4, 4)
-    focal_pt = [0, 0, focal_height]  # 相机看向小球中心
+    camera_h = sphere_radius * 2 + random.uniform(0, 15)
+    camera_pos = [random.uniform(-10, 10), random.uniform(-10, 10), camera_h]  # 相机位置
+    focal_pt = [random.uniform(-10, 10), random.uniform(-10, 10), 0]  # 相机看向小球中心
     view_up_vec = [0, 0, 1]  # Z轴向上
     light_pos = [0, 0, 100]
     image_size = (640, 480)

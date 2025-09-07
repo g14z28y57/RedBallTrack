@@ -22,8 +22,10 @@ def read_json(path):
 
 
 def save_pickle(data, path):
-    pickle.dump(data, path)
+    with open(path, "wb") as f:
+        pickle.dump(data, f)
 
 
 def read_pickle(path):
-    return pickle.load(path)
+    with open(path, "rb") as f:
+        return pickle.load(f)

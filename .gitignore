@@ -3,3 +3,4 @@ image/
 state/
 venv/
 .idea/
+*.pkl

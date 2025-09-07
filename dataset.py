@@ -7,12 +7,12 @@ import numpy as np
 from tqdm import trange
 
 
-
 class DirectionDataset(Dataset):
     def __init__(self, state_dir, image_dir):
         length1 = len(os.listdir(state_dir))
         length2 = len(os.listdir(image_dir))
         length = min(length1, length2)
+        # length = 100
         if os.path.exists("data.pkl"):
             data = read_pickle("data.pkl")
             self.state_list = data["state"]
