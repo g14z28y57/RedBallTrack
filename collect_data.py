@@ -1,10 +1,10 @@
 import pyvista as pv
 import numpy as np
 import random
-from IPython import embed
 import os
 import math
-import json
+from util import compute_direction, save_json
+
 ORIGIN = np.array([0, 0, 0], dtype=float)
 
 
@@ -130,8 +130,6 @@ def is_sphere_in_frustum(
     return True
 
 
-def save_json(data, path):
-    with open
 def take_photo_wrapper(idx):
     # --- 使用示例 ---
     # 设置参数
@@ -144,11 +142,11 @@ def take_photo_wrapper(idx):
     camera_y = camera_dist * math.sin(camera_degree)
     camera_h = random.uniform(5, 12)
     camera_pos = [camera_x, camera_y, camera_h]  # 相机位置
-    focal_height = camera_h + random.uniform(-3, 3)
+    focal_height = random.uniform(-4, 4)
     focal_pt = [0, 0, focal_height]  # 相机看向小球中心
     view_up_vec = [0, 0, 1]  # Z轴向上
     light_pos = [0, 0, 100]
-    image_size = (1200, 800)
+    image_size = (640, 480)
     view_angle_deg = 60.0  # 垂直视锥角度为30度
 
     if not is_sphere_in_frustum(
@@ -162,17 +160,29 @@ def take_photo_wrapper(idx):
     ):
         return False
 
-    data_dir = f"data/data_{idx}"
-    os.makedirs(data_dir, exist_ok=True)
-    image_path = os.path.join(data_dir, "img.png")
+    image_dir = "image"
+    os.makedirs(image_dir, exist_ok=True)
+    image_path = os.path.join(image_dir, f"{idx}.png")
+
+    camera_front = compute_direction(start=camera_pos, end=focal_pt).tolist()
+    sphere_dir = compute_direction(start=camera_front, end=sphere_pos).tolist()
+
+    distance = np.linalg.norm(np.array(camera_pos) - np.array(sphere_pos)).item()
 
     data = {
         "sphere_pos": sphere_pos,
         "focal_pos": focal_pt,
-        "camera_pos": camera_pos
+        "camera_pos": camera_pos,
+        "camera_front": camera_front,
+        "sphere_dir": sphere_dir,
+        "distance": distance
     }
 
-    embed()
+    state_dir = "state"
+    os.makedirs(state_dir, exist_ok=True)
+    json_path = os.path.join(state_dir, f"{idx}.json")
+    save_json(data, json_path)
+
     # 调用函数来完成任务
     take_photo(sphere_position=sphere_pos,
                sphere_radius=sphere_radius,
@@ -188,13 +198,17 @@ def take_photo_wrapper(idx):
     return True
 
 
-def main():
-    num_images = 100
-    idx = 0
-    while idx < num_images:
+def main(args):
+    idx = args.start_index
+    end_idx = idx + args.num
+    while idx < end_idx:
         if take_photo_wrapper(idx=idx):
             idx += 1
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description="")
+    parser.add_argument("--start_index", type=int)
+    parser.add_argument("--num", type=int)
+    main(args=parser.parse_args())
