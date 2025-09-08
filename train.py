@@ -63,16 +63,23 @@ def train(config):
             losses_dir.append(loss_dir.item())
             losses_dist.append(loss_dist.item())
             total_loss.backward()
-            optimizer.step()
 
             if count > 0 and count % log_every == 0:
+                grad_norm = 0
+                for p in model.parameters():
+                    if p.grad is not None:
+                        grad_norm += (p.grad.norm(2)) ** 2  # .norm(2) 计算 L2 范数
+                grad_norm = grad_norm ** 0.5
+
                 avg_loss_dir = sum(losses_dir) / len(losses_dir)
                 losses_dir = []
                 avg_loss_dist = sum(losses_dist) / len(losses_dist)
                 avg_loss = avg_loss_dist + avg_loss_dir
                 losses_dist = []
                 print(f"epoch: {epoch}, step: {count}, loss: {avg_loss:.4f}, loss of direction: {avg_loss_dir:.4f},"
-                      f" loss of distance: {avg_loss_dist:.4f}")
+                      f" loss of distance: {avg_loss_dist:.4f}, grad_norm: {grad_norm:.4f}")
+
+            optimizer.step()
 
             if count > 0 and count % save_every == 0:
                 torch.save(model.state_dict(), checkpoint_pth)
