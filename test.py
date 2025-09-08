@@ -19,6 +19,7 @@ def compute_stat(data):
     data_std = data_variance ** 0.5
     print(f"min: {data_min}, max: {data_max}, mean: {data_mean}, std: {data_std}")
 
+
 def visualize(data, img_path, bins=50):
     # 绘制直方图
     # bins 参数用来指定区间的数量

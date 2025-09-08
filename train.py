@@ -9,7 +9,7 @@ import torch
 def train():
     device = torch.device("cuda")
     batch_size = 64
-    dataset = DirectionDataset(state_dir="state", image_dir="image", cache_path="data.pkl")
+    dataset = DirectionDataset(state_dir="state_train", image_dir="image_train", cache_path="data_train.pkl")
     dataloader = DataLoader(dataset, shuffle=True, batch_size=batch_size)
 
     loss_fn_dir = torch.nn.MSELoss()  # For direction, which is a regression task

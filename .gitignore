@@ -1,6 +1,6 @@
 __pycache__/
-image/
-state/
+image_train/
+state_train/
 image_test/
 state_test/
 venv/
