@@ -1,40 +1,48 @@
 import os.path
-
+from util import read_json
 from torch.utils.data import DataLoader
 from model import DirectionModel
 from dataset import DirectionDataset
 import torch
 
 
-def train():
+def train(config):
+    batch_size = config["training"]["batch_size"]
+    num_epochs = config["training"]["num_epochs"]
+    log_every = config["training"]["log_every"]
+    save_every = config["training"]["save_every"]
+    lr = config["training"]["lr"]
+
+    d_input = config["model"]["d_input"]
+    d_model = config["model"]["d_model"]
+    d_feedforward = config["model"]["d_feedforward"]
+    out_channels = config["model"]["out_channels"]
+    num_layers = config["model"]["num_layers"]
+
     device = torch.device("cuda")
-    batch_size = 64
     dataset = DirectionDataset(state_dir="state_train", image_dir="image_train", cache_path="data_train.pkl")
     dataloader = DataLoader(dataset, shuffle=True, batch_size=batch_size)
 
     loss_fn_dir = torch.nn.MSELoss()  # For direction, which is a regression task
     loss_fn_dist = torch.nn.MSELoss()  # For distance, which is also regression
 
-    model = DirectionModel(d_input=1506,
-                           d_model=256,
-                           d_feedforward=1024,
-                           out_channels=5,
-                           num_layers=5)
+    model = DirectionModel(d_input=d_input,
+                           d_model=d_model,
+                           d_feedforward=d_feedforward,
+                           out_channels=out_channels,
+                           num_layers=num_layers)
     checkpoint_pth = "direction_model.pth"
     if os.path.exists(checkpoint_pth):
         model.load_state_dict(torch.load(checkpoint_pth))
     model = model.to(device)
     model.train()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)  # Adam is a good general-purpose optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)  # Adam is a good general-purpose optimizer
     optimizer_state_pth = "optimizer.pth"
     if os.path.exists(optimizer_state_pth):
         optimizer.load_state_dict(torch.load(optimizer_state_pth))
 
-    num_epochs = 1000
     count = 0
-    log_every = 50
-    save_every = 1000
 
     losses_dir = []
     losses_dist = []
@@ -74,5 +82,11 @@ def train():
             count += 1
 
 
+def main():
+    config_path = "config.json"
+    config = read_json(config_path)
+    train(config)
+
+
 if __name__ == "__main__":
-    train()
+    main()
