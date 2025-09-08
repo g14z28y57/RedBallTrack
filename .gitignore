@@ -1,0 +1,10 @@
+__pycache__/
+image/
+state/
+image_test/
+state_test/
+venv/
+.idea/
+*.pkl
+*.png
+*.pth
