@@ -72,8 +72,11 @@ def test():
         loss_dir_list.append(loss_dir)
         loss_dist_list.append(loss_dist)
 
+    print("stats of direction loss")
     compute_stat(loss_dir_list)
     visualize(loss_dir_list, "loss_direction.png")
+
+    print("stats of distance loss")
     compute_stat(loss_dist_list)
     visualize(loss_dist_list, "loss_distance.png")
 
