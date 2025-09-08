@@ -52,6 +52,7 @@ class DirectionDataset(Dataset):
             "state": self.state_list,
             "image": self.image_list
         }
+
         save_pickle(data, self.cache_path)
 
     def __len__(self):
