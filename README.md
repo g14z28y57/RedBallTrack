@@ -1,13 +1,13 @@
 ## Motivation & Goal
-The motivation of this small project is to demonstrate that a properly-structured neural networks can learn how to track a target object.
+The motivation of this small project is to demonstrate that a small properly-structured neural networks can learn how to track a target object.
 
-## Establish the Virtual 3D Enviroment
+## Establish the Virtual 3D Environment
 A fixed-sized grey floor is placed in the level, and a red ball with fixed radius is placed randomly onto the floor. 
 The camera position and focal point are also randomly placed each time when a photo shot is taken.
 
 ## Model Training
 The input to the model are the photo shot, camera position and camera front. 
-The model is trained to output the unit vector and distance from the camera position to ball positon.
+The model is trained to output the unit vector and distance from the camera position to ball position.
 
 ## Code Instruction
 ```
