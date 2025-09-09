@@ -18,11 +18,11 @@ source venv/bin/activate
 # Install packages
 bash install.sh
 
-# Generate 100 train data
-python collect_data.py --start_index=0 --num=100 --image_dir="image_train" --state_dir="state_train"
+# Generate 10000 train data
+python collect_data.py --start_index=0 --num=10000 --image_dir="image_train" --state_dir="state_train"
 
-# Generate test data
-python collect_data.py --start_index=0 --num=100 --image_dir="image_test" --state_dir="state_test"
+# Generate 1000 test data
+python collect_data.py --start_index=0 --num=1000 --image_dir="image_test" --state_dir="state_test"
 
 # Train model
 python train.py
