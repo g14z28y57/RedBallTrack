@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import pickle
+import matplotlib.pyplot as plt
 
 
 def compute_direction(start, end):
@@ -29,3 +30,17 @@ def save_pickle(data, path):
 def read_pickle(path):
     with open(path, "rb") as f:
         return pickle.load(f)
+
+
+def plot_hist(data, img_path, bins=50):
+    # 绘制直方图
+    # bins 参数用来指定区间的数量
+    plt.hist(data, bins=bins, edgecolor='black')
+
+    # 添加标题和标签
+    plt.title('Hist')
+    plt.xlabel('value')
+    plt.ylabel('number')
+
+    # 显示图表
+    plt.savefig(img_path)

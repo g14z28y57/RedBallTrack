@@ -4,8 +4,8 @@ from torch.utils.data import DataLoader
 from model import VisionBackbone, DirectionModel
 from dataset import DirectionDataset
 import torch
-import matplotlib.pyplot as plt
 from tqdm import tqdm
+from util import plot_hist
 
 
 def compute_stat(data):
@@ -18,20 +18,6 @@ def compute_stat(data):
     data_variance = data_m2 / data_len - data_mean ** 2
     data_std = data_variance ** 0.5
     print(f"min: {data_min}, max: {data_max}, mean: {data_mean}, std: {data_std}")
-
-
-def visualize(data, img_path, bins=50):
-    # 绘制直方图
-    # bins 参数用来指定区间的数量
-    plt.hist(data, bins=bins, edgecolor='black')
-
-    # 添加标题和标签
-    plt.title('Hist')
-    plt.xlabel('value')
-    plt.ylabel('number')
-
-    # 显示图表
-    plt.savefig(img_path)
 
 
 @torch.inference_mode()
@@ -52,6 +38,7 @@ def test(config):
                                cache_path="data_test.pkl",
                                image_encoder=backbone,
                                device=device)
+    dataset.plot_distance_hist()
     dataloader = DataLoader(dataset, shuffle=True, batch_size=batch_size)
 
     loss_fn_dir = torch.nn.MSELoss()  # For direction, which is a regression task
@@ -88,14 +75,18 @@ def test(config):
 
     print("stats of direction loss")
     compute_stat(loss_dir_list)
-    visualize(loss_dir_list, "loss_direction.png")
+    plot_hist(loss_dir_list, "loss_direction.png")
 
     print("stats of distance loss")
     compute_stat(loss_dist_list)
-    visualize(loss_dist_list, "loss_distance.png")
+    plot_hist(loss_dist_list, "loss_distance.png")
 
 
-if __name__ == "__main__":
+def main():
     config_path = "config.json"
     config = read_json(config_path)
     test(config)
+
+
+if __name__ == "__main__":
+    main()

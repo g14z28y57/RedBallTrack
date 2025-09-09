@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import Dataset
 import cv2
 import os
-from util import read_json, save_pickle, read_pickle
+from util import read_json, save_pickle, read_pickle, plot_hist
 import numpy as np
 from tqdm import trange
 
@@ -61,6 +61,10 @@ class DirectionDataset(Dataset):
 
     def __len__(self):
         return len(self.state_list)
+
+    def plot_distance_hist(self):
+        distance_list = [item["distance"] for item in self.state_list]
+        plot_hist(distance_list, img_path="test_distance_distribution", bins=50)
 
 
 # if __name__ == "__main__":
