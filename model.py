@@ -4,20 +4,28 @@ import torchvision.models as models
 from torchvision.models.feature_extraction import create_feature_extractor
 
 
+class VisionBackbone(nn.Module):
+    def __init__(self, out_layer):
+        super().__init__()
+        vision_backbone = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
+        self.feature_extractor = create_feature_extractor(vision_backbone, return_nodes={out_layer: "out"}).eval()
+        for param in self.feature_extractor.parameters():
+            param.requires_grad = False
+
+    @torch.inference_mode()
+    def forward(self, x):
+        return self.feature_extractor(x)["out"]
+
+
 class VisionEncoder(nn.Module):
     def __init__(self, out_channels):
         super().__init__()
-        vision_backbone = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
-        self.model = create_feature_extractor(vision_backbone, return_nodes={"layer4": "out"}).eval()
-        for param in self.model.parameters():
-            param.requires_grad = False
         self.conv = nn.Conv2d(in_channels=512, out_channels=out_channels, kernel_size=1, padding=0, stride=1)
 
     def forward(self, x):
         batch_size = x.shape[0]
-        with torch.no_grad():
-            x = self.model(x)["out"]
-        x = self.conv(x).view(batch_size, -1)
+        x = self.conv(x)
+        x = x.view(batch_size, -1)
         return x
 
 
@@ -59,7 +67,7 @@ class FeatureFuser(nn.Module):
             x = layer(x)
         direction = self.direction_head(x)
         distance = self.distance_head(x)
-        direction = nn.Tanh()(direction)
+        direction = nn.Hardtanh()(direction)
         distance = nn.ReLU()(distance)
         return direction, distance
 

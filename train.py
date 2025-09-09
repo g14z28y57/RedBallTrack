@@ -1,7 +1,7 @@
 import os.path
 from util import read_json
 from torch.utils.data import DataLoader
-from model import DirectionModel
+from model import VisionBackbone, DirectionModel
 from dataset import DirectionDataset
 import torch
 
@@ -16,15 +16,22 @@ def train(config):
     d_input = config["model"]["d_input"]
     d_model = config["model"]["d_model"]
     d_feedforward = config["model"]["d_feedforward"]
+    out_layer = config["model"]["output_layer"]
     out_channels = config["model"]["out_channels"]
     num_layers = config["model"]["num_layers"]
 
     device = torch.device("cuda")
-    dataset = DirectionDataset(state_dir="state_train", image_dir="image_train", cache_path="data_train.pkl")
+
+    backbone = VisionBackbone(out_layer=out_layer).to(device)
+    dataset = DirectionDataset(state_dir="state_train",
+                               image_dir="image_train",
+                               cache_path="data_train.pkl",
+                               image_encoder=backbone,
+                               device=device)
     dataloader = DataLoader(dataset, shuffle=True, batch_size=batch_size)
 
     loss_fn_dir = torch.nn.MSELoss()  # For direction, which is a regression task
-    loss_fn_dist = torch.nn.MSELoss()  # For distance, which is also regression
+    loss_fn_dist = torch.nn.L1Loss()  # For distance, which is also regression
 
     model = DirectionModel(d_input=d_input,
                            d_model=d_model,
@@ -43,17 +50,16 @@ def train(config):
         optimizer.load_state_dict(torch.load(optimizer_state_pth))
 
     count = 0
-
     losses_dir = []
     losses_dist = []
 
     for epoch in range(num_epochs):
-        for image, camera_pos, camera_front, sphere_dir, distance in dataloader:
-            image = image.to(device)
+        for img_feature, camera_pos, camera_front, sphere_dir, distance in dataloader:
+            img_feature = img_feature.to(device)
             camera_pos = camera_pos.to(device)
             camera_front = camera_front.to(device)
             optimizer.zero_grad()
-            out_dir, out_dist = model(image, camera_pos, camera_front)
+            out_dir, out_dist = model(img_feature, camera_pos, camera_front)
             sphere_dir = sphere_dir.to(device)
             distance = distance.to(device)
 
@@ -63,29 +69,21 @@ def train(config):
             losses_dir.append(loss_dir.item())
             losses_dist.append(loss_dist.item())
             total_loss.backward()
+            optimizer.step()
 
             if count > 0 and count % log_every == 0:
-                grad_norm = 0
-                for p in model.parameters():
-                    if p.grad is not None:
-                        grad_norm += (p.grad.norm(2)) ** 2  # .norm(2) 计算 L2 范数
-                grad_norm = grad_norm ** 0.5
-
                 avg_loss_dir = sum(losses_dir) / len(losses_dir)
-                losses_dir = []
                 avg_loss_dist = sum(losses_dist) / len(losses_dist)
                 avg_loss = avg_loss_dist + avg_loss_dir
-                losses_dist = []
                 print(f"epoch: {epoch}, step: {count}, loss: {avg_loss:.4f}, loss of direction: {avg_loss_dir:.4f},"
-                      f" loss of distance: {avg_loss_dist:.4f}, grad_norm: {grad_norm:.4f}")
-
-            optimizer.step()
+                      f" loss of distance: {avg_loss_dist:.4f}")
+                losses_dir = []
+                losses_dist = []
 
             if count > 0 and count % save_every == 0:
                 torch.save(model.state_dict(), checkpoint_pth)
                 torch.save(optimizer.state_dict(), optimizer_state_pth)
                 print("model saved")
-
             count += 1
 
 

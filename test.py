@@ -1,7 +1,7 @@
 import os.path
-
+from util import read_json
 from torch.utils.data import DataLoader
-from model import DirectionModel
+from model import VisionBackbone, DirectionModel
 from dataset import DirectionDataset
 import torch
 import matplotlib.pyplot as plt
@@ -35,20 +35,34 @@ def visualize(data, img_path, bins=50):
 
 
 @torch.inference_mode()
-def test():
+def test(config):
     device = torch.device("cuda")
     batch_size = 1
-    dataset = DirectionDataset(state_dir="state_test", image_dir="image_test", cache_path="data_test.pkl")
+
+    d_input = config["model"]["d_input"]
+    d_model = config["model"]["d_model"]
+    d_feedforward = config["model"]["d_feedforward"]
+    out_layer = config["model"]["output_layer"]
+    out_channels = config["model"]["out_channels"]
+    num_layers = config["model"]["num_layers"]
+
+    backbone = VisionBackbone(out_layer=out_layer).to(device)
+    dataset = DirectionDataset(state_dir="state_test",
+                               image_dir="image_test",
+                               cache_path="data_test.pkl",
+                               image_encoder=backbone,
+                               device=device)
     dataloader = DataLoader(dataset, shuffle=True, batch_size=batch_size)
 
     loss_fn_dir = torch.nn.MSELoss()  # For direction, which is a regression task
-    loss_fn_dist = torch.nn.MSELoss()  # For distance, which is also regression
+    loss_fn_dist = torch.nn.L1Loss()  # For distance, which is also regression
 
-    model = DirectionModel(d_input=1506,
-                           d_model=256,
-                           d_feedforward=1024,
-                           out_channels=5,
-                           num_layers=5)
+    model = DirectionModel(d_input=d_input,
+                           d_model=d_model,
+                           d_feedforward=d_feedforward,
+                           out_channels=out_channels,
+                           num_layers=num_layers)
+
     checkpoint_pth = "direction_model.pth"
     assert os.path.exists(checkpoint_pth)
     model.load_state_dict(torch.load(checkpoint_pth))
@@ -58,11 +72,11 @@ def test():
     loss_dir_list = []
     loss_dist_list = []
 
-    for image, camera_pos, camera_front, sphere_dir, distance in tqdm(dataloader):
-        image = image.to(device)
+    for img_feature, camera_pos, camera_front, sphere_dir, distance in tqdm(dataloader):
+        img_feature = img_feature.to(device)
         camera_pos = camera_pos.to(device)
         camera_front = camera_front.to(device)
-        out_dir, out_dist = model(image, camera_pos, camera_front)
+        out_dir, out_dist = model(img_feature, camera_pos, camera_front)
         sphere_dir = sphere_dir.to(device)
         distance = distance.to(device)
 
@@ -82,4 +96,6 @@ def test():
 
 
 if __name__ == "__main__":
-    test()
+    config_path = "config.json"
+    config = read_json(config_path)
+    test(config)

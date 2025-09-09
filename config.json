@@ -2,15 +2,16 @@
   "training": {
     "batch_size": 64,
     "num_epochs": 1000,
-    "log_every": 50,
-    "save_every": 1000,
+    "log_every": 500,
+    "save_every": 10000,
     "lr": 1e-4
   },
   "model": {
-    "d_input": 1506,
+    "output_layer": "layer4",
+    "d_input": 906,
     "d_model": 256,
     "d_feedforward": 1024,
-    "out_channels": 5,
+    "out_channels": 3,
     "num_layers": 3
   }
 }
