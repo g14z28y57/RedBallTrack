@@ -3,7 +3,7 @@ import numpy as np
 import random
 import os
 from util import compute_direction, save_json
-
+import random
 ORIGIN = np.array([0, 0, 0], dtype=float)
 
 
@@ -131,7 +131,7 @@ def is_sphere_in_frustum(
     return True
 
 
-def take_photo_wrapper(idx, image_dir, state_dir, texture_paths):
+def take_photo_wrapper(idx, image_dir, state_dir, texture_path):
     # --- 使用示例 ---
     # 设置参数
     plane_size = 20
@@ -146,7 +146,7 @@ def take_photo_wrapper(idx, image_dir, state_dir, texture_paths):
     camera_pos = [
         random.uniform(-10, 10),
         random.uniform(-10, 10),
-        sphere_radius * 2 + random.uniform(0, 15)
+        sphere_radius * 2 + random.uniform(0, 5)
     ]  # 相机位置
 
     focal_pt = [
@@ -192,8 +192,6 @@ def take_photo_wrapper(idx, image_dir, state_dir, texture_paths):
     json_path = os.path.join(state_dir, f"{idx}.json")
     save_json(data, json_path)
 
-    texture_path = random.choice(texture_paths)
-
     # 调用函数来完成任务
     take_photo(sphere_position=sphere_pos,
                sphere_radius=sphere_radius,
@@ -213,10 +211,12 @@ def take_photo_wrapper(idx, image_dir, state_dir, texture_paths):
 def main(args):
     idx = args.start_index
     end_idx = idx + args.num
-    texture_dir = ""
-    texture_paths = [os.path.join(texture_dir, _) for _ in os.listdir(texture_dir)]
+    texture_dir = args.texture_dir
+    texture_paths = [os.path.join(texture_dir, name) for name in os.listdir(texture_dir)]
+    random.shuffle(texture_paths)
     while idx < end_idx:
-        if take_photo_wrapper(idx=idx, image_dir=args.image_dir, state_dir=args.state_dir, texture_paths=texture_paths):
+        texture_path = texture_paths[idx]
+        if take_photo_wrapper(idx=idx, image_dir=args.image_dir, state_dir=args.state_dir, texture_path=texture_path):
             idx += 1
 
 
@@ -227,4 +227,5 @@ if __name__ == "__main__":
     parser.add_argument("--num", type=int)
     parser.add_argument("--image_dir", type=str)
     parser.add_argument("--state_dir", type=str)
+    parser.add_argument("--texture_dir", type=str)
     main(args=parser.parse_args())

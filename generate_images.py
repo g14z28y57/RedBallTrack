@@ -71,10 +71,5 @@ def main():
         generate_image(base, refiner, prompt, img_path, img_width=1024, img_height=1024)
 
 
-def cut_images():
-    img_dir = "texture_images"
-    num = len(os.listdir(img_dir))
-
-
 if __name__ == "__main__":
     main()
