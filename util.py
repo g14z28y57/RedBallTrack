@@ -44,3 +44,5 @@ def plot_hist(data, img_path, bins=50):
 
     # 显示图表
     plt.savefig(img_path)
+
+    plt.close()
