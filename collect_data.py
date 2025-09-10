@@ -2,7 +2,6 @@ import pyvista as pv
 import numpy as np
 import random
 import os
-import math
 from util import compute_direction, save_json
 
 ORIGIN = np.array([0, 0, 0], dtype=float)
@@ -19,6 +18,7 @@ def take_photo(
         light_position,  # 光源位置
         image_size,  # 图像尺寸
         plane_size,  # 地面宽度
+        plane_texture_path,  # 地板贴图
         filename  # 输出图像的文件名
     ):
 
@@ -39,8 +39,9 @@ def take_photo(
     sphere = pv.Sphere(radius=sphere_radius, center=sphere_position, phi_resolution=360, theta_resolution=360)
     plotter.add_mesh(sphere, color='red')
 
+    plane_texture = pv.read_texture(plane_texture_path)
     plane = pv.Plane(center=ORIGIN, direction=(0, 0, 1), i_size=plane_size, j_size=plane_size)
-    plotter.add_mesh(plane, color='grey')
+    plotter.add_mesh(plane, texture=plane_texture, smooth_shading=True)
 
     # 3. 正确设置相机属性
     plotter.camera.position = camera_position
@@ -130,7 +131,7 @@ def is_sphere_in_frustum(
     return True
 
 
-def take_photo_wrapper(idx, image_dir, state_dir):
+def take_photo_wrapper(idx, image_dir, state_dir, texture_paths):
     # --- 使用示例 ---
     # 设置参数
     plane_size = 20
@@ -191,6 +192,8 @@ def take_photo_wrapper(idx, image_dir, state_dir):
     json_path = os.path.join(state_dir, f"{idx}.json")
     save_json(data, json_path)
 
+    texture_path = random.choice(texture_paths)
+
     # 调用函数来完成任务
     take_photo(sphere_position=sphere_pos,
                sphere_radius=sphere_radius,
@@ -201,6 +204,7 @@ def take_photo_wrapper(idx, image_dir, state_dir):
                light_position=light_pos,
                image_size=image_size,
                plane_size=plane_size,
+               plane_texture_path=texture_path,
                filename=image_path)
 
     return True
@@ -209,8 +213,10 @@ def take_photo_wrapper(idx, image_dir, state_dir):
 def main(args):
     idx = args.start_index
     end_idx = idx + args.num
+    texture_dir = ""
+    texture_paths = [os.path.join(texture_dir, _) for _ in os.listdir(texture_dir)]
     while idx < end_idx:
-        if take_photo_wrapper(idx=idx, image_dir=args.image_dir, state_dir=args.state_dir):
+        if take_photo_wrapper(idx=idx, image_dir=args.image_dir, state_dir=args.state_dir, texture_paths=texture_paths):
             idx += 1
 
 

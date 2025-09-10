@@ -4,3 +4,6 @@ pip install matplotlib
 pip install numpy
 pip install tqdm
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+pip install diffusers
+pip install transformers
+pip install accelerate
