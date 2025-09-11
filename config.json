@@ -9,8 +9,8 @@
   "model": {
     "output_layer": "layer4",
     "d_input": 906,
-    "d_model": 256,
-    "d_feedforward": 1024,
+    "d_model": 128,
+    "d_feedforward": 512,
     "out_channels": 3,
     "num_layers": 4
   }
