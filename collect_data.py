@@ -5,7 +5,7 @@ import os
 import math
 from util import compute_direction, save_json
 
-ORIGIN = np.array([0, 0, 0], dtype=float)
+ORIGIN = [0, 0, 0]
 
 
 # 在3D场景中放置一个红色小球和相机，并拍摄一张图像。
@@ -56,12 +56,30 @@ def take_photo(
     # 3. 正确设置相机属性
     plotter.camera.position = camera_position
     plotter.camera.focal_point = focal_point
-    plotter.camera.up = view_up
     plotter.camera.view_angle = view_angle
+    plotter.camera.clipping_range = (0.01, 100)
+    plotter.camera.up = view_up
+    
+    # from IPython import embed
+    # embed()
     # 3. 拍摄图像
     plotter.screenshot(filename=filename)
-
     print(f"图像已保存到 {filename}")
+    
+    # 创建一些点来标记
+    label_position_list = []
+    labels = []
+    for idx, cylinder_position in enumerate(cylinder_position_list):
+        label_position = cylinder_position.copy()
+        label_position[2] += cylinder_height
+        label_position_list.append(label_position)
+        labels.append(f"{idx}")
+    points = np.array(cylinder_position_list)
+    point_cloud = pv.PolyData(points)
+    plotter.add_mesh(point_cloud, color='red', render_points_as_spheres=True, point_size=1)
+    # 在这些点上添加标签
+    plotter.add_point_labels(points, labels, font_size=20)
+    plotter.screenshot(filename=filename.split(".")[0] + "_debug.png")
     plotter.close()
 
 
@@ -145,36 +163,36 @@ def take_photo_wrapper(idx, image_dir, state_dir):
     # --- 使用示例 ---
     # 设置参数
     plane_size = 20
-    cylinder_radius = 0.6
+    cylinder_radius = 0.7
     cylinder_height = 0.4
     
-    overall_shift_x = random.uniform(-4, 4)
-    overall_shift_y = random.uniform(-4, 4)
-    
+    center_x = random.uniform(-5, 5)
+    center_y = random.uniform(-5, 5)
     start_idx = random.randint(0, 8)
+    
     cylinder_position_list = []
     for n in range(start_idx, 9):
-        i, j = divmod(n, 3)
-        x = overall_shift_x - 3 + i * 3 + random.uniform(-0.2, 0.2)
-        y = overall_shift_y - 3 + j * 3 + random.uniform(-0.2, 0.2)
+        j, i = divmod(n, 3)
+        x = center_x - 3 + j * 3 + random.uniform(-0.2, 0.2)
+        y = center_y - 3 + i * 3 + random.uniform(-0.2, 0.2)
         cylinder_position = [x, y, cylinder_height * 0.5]
         cylinder_position_list.append(cylinder_position)
     
     first_cylinder_pos = cylinder_position_list[0]
     camera_pos = first_cylinder_pos.copy()
-    camera_pos[0] = camera_pos[0] + random.uniform(-2, 2)
-    camera_pos[1] = camera_pos[1] + random.uniform(-6, -4)
-    camera_pos[2] = cylinder_height + random.uniform(5, 10)
+    camera_pos[0] = first_cylinder_pos[0] + random.uniform(-2, 2)
+    camera_pos[1] = first_cylinder_pos[1] + random.uniform(-10, 2)
+    camera_pos[2] = cylinder_height + random.uniform(3, 10)
 
-    focal_pos = first_cylinder_pos.copy()
-    focal_pos[0] = focal_pos[0] + random.uniform(-1, 1)
-    focal_pos[1] = focal_pos[1] + random.uniform(-1, 1)
+    focal_pos = camera_pos.copy()
+    focal_pos[0] = camera_pos[0] + random.uniform(-3, 3)
+    focal_pos[1] = camera_pos[1] + random.uniform(4, 10)
     focal_pos[2] = 0
 
     view_up_vec = [0, 0, 1]  # Z轴向上
     light_pos = [0, 0, 100]
     image_size = (640, 480)
-    view_angle_deg = 60.0  # 垂直视锥角度为30度
+    view_angle_deg = 90.0  # 垂直视锥角度为30度
 
     if not is_cylinder_in_frustum(
         cylinder_position=first_cylinder_pos,  # 小球中心坐标 [x, y, z]
