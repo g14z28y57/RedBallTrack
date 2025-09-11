@@ -19,6 +19,7 @@ def take_photo(
         light_position,  # 光源位置
         image_size,  # 图像尺寸
         plane_size,  # 地面宽度
+        plane_texture_path,  # 地板贴图
         filename  # 输出图像的文件名
     ):
 
@@ -42,9 +43,9 @@ def take_photo(
         sphere = pv.Sphere(radius=sphere_radius, center=sphere_position, phi_resolution=360, theta_resolution=360)
         plotter.add_mesh(sphere, color='red')
 
-    
+    plane_texture = pv.read_texture(plane_texture_path)
     plane = pv.Plane(center=ORIGIN, direction=(0, 0, 1), i_size=plane_size, j_size=plane_size)
-    plotter.add_mesh(plane, color='grey')
+    plotter.add_mesh(plane, texture=plane_texture, smooth_shading=True)
 
     # 3. 正确设置相机属性
     plotter.camera.position = camera_position
@@ -58,26 +59,102 @@ def take_photo(
     plotter.close()
 
 
+def is_sphere_in_frustum(
+    sphere_position,  # 小球中心坐标 [x, y, z]
+    sphere_radius,    # 小球半径
+    camera_position,  # 相机位置 [x, y, z]
+    focal_point,      # 相机焦点 [x, y, z]
+    view_up,          # 相机上方向向量 [x, y, z]
+    view_angle,       # 垂直视场角（度）
+    image_size        # 图像宽高比，默认为1200/800=1.5
+):
+    """
+    判断小球是否在相机的视锥内。
+    返回 True 如果小球（部分或全部）在视锥内，否则返回 False。
+    """
+    aspect_ratio = image_size[0] / image_size[1]
+    # 将输入转换为 numpy 数组
+    sphere_position = np.array(sphere_position, dtype=float)
+    camera_position = np.array(camera_position, dtype=float)
+    focal_point = np.array(focal_point, dtype=float)
+    view_up = np.array(view_up, dtype=float)
+
+    # 计算相机的朝向向量（从相机指向焦点）
+    camera_direction = focal_point - camera_position
+    camera_direction = camera_direction / np.linalg.norm(camera_direction)
+
+    # 计算相机的右向量（通过叉乘）
+    right_vector = np.cross(camera_direction, view_up)
+    right_vector = right_vector / np.linalg.norm(right_vector)
+
+    # 重新计算上向量，确保正交
+    up_vector = np.cross(right_vector, camera_direction)
+    up_vector = up_vector / np.linalg.norm(up_vector)
+
+    # 将垂直视场角转换为弧度
+    vertical_fov = np.deg2rad(view_angle)
+    # 根据宽高比计算水平视场角
+    horizontal_fov = vertical_fov * aspect_ratio
+
+    # 计算小球中心到相机的向量
+    sphere_to_camera = sphere_position - camera_position
+    distance_to_sphere = np.linalg.norm(sphere_to_camera)
+
+    # 如果小球在相机后面，直接返回 False
+    projection = np.dot(sphere_to_camera, camera_direction)
+    if projection <= 0:
+        return False
+
+    # 将小球中心向量投影到相机坐标系
+    sphere_to_camera_normalized = sphere_to_camera / distance_to_sphere
+
+    # 计算小球中心相对于相机方向的夹角
+    cos_theta = np.dot(sphere_to_camera_normalized, camera_direction)
+    if cos_theta <= 0:
+        return False
+    theta = np.arccos(cos_theta)
+
+    # 计算小球的角半径（考虑小球半径）
+    angular_radius = np.arcsin(min(sphere_radius / distance_to_sphere, 1.0))
+
+    # 检查垂直方向是否在视锥内
+    vertical_half_fov = vertical_fov / 2
+    if (theta - angular_radius) > vertical_half_fov:
+        return False
+
+    # 检查水平方向
+    # 投影到右向量和上向量平面，计算水平角度
+    proj_right = np.dot(sphere_to_camera_normalized, right_vector)
+    proj_up = np.dot(sphere_to_camera_normalized, up_vector)
+    theta_horizontal = np.arctan2(proj_right, cos_theta)
+    horizontal_half_fov = horizontal_fov / 2
+    if abs(theta_horizontal) > (horizontal_half_fov + angular_radius):
+        return False
+
+    # 如果通过所有检查，小球在视锥内
+    return True
+
+
 def take_photo_wrapper(idx, image_dir, state_dir):
     # --- 使用示例 ---
     # 设置参数
     plane_size = 20
-    sphere_radius = 1
+    sphere_radius = 0.6
 
     start_idx = random.randint(0, 8)
     sphere_position_list = []
     for n in range(start_idx, 9):
         i, j = divmod(n, 3)
-        x = -3 + i * 3 + random.uniform(-0.1, 0.1)
-        y = -3 + j * 3 + random.uniform(-0.1, 0.1)
+        x = -3 + i * 3 + random.uniform(-0.2, 0.2)
+        y = -3 + j * 3 + random.uniform(-0.2, 0.2)
         sphere_position = [x, y, sphere_radius]
         sphere_position_list.append(sphere_position)
     
     first_sphere_pos = sphere_position_list[0]
     camera_pos = first_sphere_pos.copy()
-    camera_pos[0] = camera_pos[0] + random.uniform(-4, -2)
-    camera_pos[1] = camera_pos[1] + random.uniform(-4, -2)
-    camera_pos[2] = 2 * sphere_radius + random.uniform(6, 8)
+    camera_pos[0] = camera_pos[0] + random.uniform(-2, 2)
+    camera_pos[1] = camera_pos[1] + random.uniform(-6, -4)
+    camera_pos[2] = 2 * sphere_radius + random.uniform(5, 10)
 
     focal_pos = first_sphere_pos.copy()
     focal_pos[0] = focal_pos[0] + random.uniform(-1, 1)
@@ -89,6 +166,17 @@ def take_photo_wrapper(idx, image_dir, state_dir):
     image_size = (640, 480)
     view_angle_deg = 60.0  # 垂直视锥角度为30度
 
+    if not is_sphere_in_frustum(
+        sphere_position=first_sphere_pos,  # 小球中心坐标 [x, y, z]
+        sphere_radius=sphere_radius,  # 小球半径
+        camera_position=camera_pos,  # 相机位置 [x, y, z]
+        focal_point=focal_pos,  # 相机焦点 [x, y, z]
+        view_up=view_up_vec,  # 相机上方向向量 [x, y, z]
+        view_angle=view_angle_deg,  # 垂直视锥角度（度）
+        image_size=image_size
+    ):
+        return False
+    
     os.makedirs(image_dir, exist_ok=True)
     image_path = os.path.join(image_dir, f"{idx}.png")
 
@@ -120,6 +208,7 @@ def take_photo_wrapper(idx, image_dir, state_dir):
                light_position=light_pos,
                image_size=image_size,
                plane_size=plane_size,
+               plane_texture_path="plane.jpg",
                filename=image_path)
 
     return True
