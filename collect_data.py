@@ -147,13 +147,16 @@ def take_photo_wrapper(idx, image_dir, state_dir):
     plane_size = 20
     cylinder_radius = 0.6
     cylinder_height = 0.4
-
+    
+    overall_shift_x = random.uniform(-4, 4)
+    overall_shift_y = random.uniform(-4, 4)
+    
     start_idx = random.randint(0, 8)
     cylinder_position_list = []
     for n in range(start_idx, 9):
         i, j = divmod(n, 3)
-        x = -3 + i * 3 + random.uniform(-0.2, 0.2)
-        y = -3 + j * 3 + random.uniform(-0.2, 0.2)
+        x = overall_shift_x - 3 + i * 3 + random.uniform(-0.2, 0.2)
+        y = overall_shift_y - 3 + j * 3 + random.uniform(-0.2, 0.2)
         cylinder_position = [x, y, cylinder_height * 0.5]
         cylinder_position_list.append(cylinder_position)
     

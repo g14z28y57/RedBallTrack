@@ -59,15 +59,15 @@ def test(config):
     loss_dir_list = []
     loss_dist_list = []
 
-    for img_feature, camera_pos, camera_front, sphere_dir, distance in tqdm(dataloader):
+    for img_feature, camera_pos, camera_front, cylinder_dir, distance in tqdm(dataloader):
         img_feature = img_feature.to(device)
         camera_pos = camera_pos.to(device)
         camera_front = camera_front.to(device)
         out_dir, out_dist = model(img_feature, camera_pos, camera_front)
-        sphere_dir = sphere_dir.to(device)
+        cylinder_dir = cylinder_dir.to(device)
         distance = distance.to(device)
 
-        loss_dir = loss_fn_dir(out_dir, sphere_dir).item()
+        loss_dir = loss_fn_dir(out_dir, cylinder_dir).item()
         loss_dist = loss_fn_dist(out_dist, distance).item()
 
         loss_dir_list.append(loss_dir)

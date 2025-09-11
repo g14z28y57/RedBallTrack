@@ -54,16 +54,16 @@ def train(config):
     losses_dist = []
 
     for epoch in range(num_epochs):
-        for img_feature, camera_pos, camera_front, sphere_dir, distance in dataloader:
+        for img_feature, camera_pos, camera_front, cylinder_dir, distance in dataloader:
             img_feature = img_feature.to(device)
             camera_pos = camera_pos.to(device)
             camera_front = camera_front.to(device)
             optimizer.zero_grad()
             out_dir, out_dist = model(img_feature, camera_pos, camera_front)
-            sphere_dir = sphere_dir.to(device)
+            cylinder_dir = cylinder_dir.to(device)
             distance = distance.to(device)
 
-            loss_dir = loss_fn_dir(out_dir, sphere_dir)
+            loss_dir = loss_fn_dir(out_dir, cylinder_dir)
             loss_dist = loss_fn_dist(out_dist, distance)
             total_loss = 10 * loss_dir + loss_dist
             losses_dir.append(loss_dir.item())

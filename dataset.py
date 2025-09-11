@@ -37,19 +37,19 @@ class DirectionDataset(Dataset):
 
     def __getitem__(self, idx):
         state = self.state_list[idx]
-        # sphere_pos = state["sphere_pos"]
+        # cylinder_pos = state["cylinder_pos"]
         # focal_pt = state["focal_pos"]
         camera_pos = np.array(state["camera_pos"])
         camera_front = np.array(state["camera_front"])
-        sphere_dir = np.array(state["sphere_dir"])
+        cylinder_dir = np.array(state["cylinder_dir"])
         distance = np.array(state["distance"])
         image = self.image_list[idx]
         image = torch.tensor(image, dtype=torch.float)
         camera_pos = torch.tensor(camera_pos, dtype=torch.float)
         camera_front = torch.tensor(camera_front, dtype=torch.float)
-        sphere_dir = torch.tensor(sphere_dir, dtype=torch.float)
+        cylinder_dir = torch.tensor(cylinder_dir, dtype=torch.float)
         distance = torch.tensor(distance, dtype=torch.float).reshape(1)
-        return image, camera_pos, camera_front, sphere_dir, distance
+        return image, camera_pos, camera_front, cylinder_dir, distance
 
     def cache(self):
         data = {
