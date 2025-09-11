@@ -14,9 +14,7 @@ class VisionBackbone(nn.Module):
 
     @torch.inference_mode()
     def forward(self, x):
-        batch_size = x.shape[0]
         x = self.feature_extractor(x)["out"]
-        x = x.view(batch_size, -1)
         return x
 
 
@@ -78,13 +76,12 @@ class FeatureFuser(nn.Module):
 class DirectionModel(nn.Module):
     def __init__(self, d_input, d_model, d_feedforward, out_channels, num_layers, d_direction=3, d_distance=1, dropout=0.3):
         super().__init__()
-        # self.vision = VisionEncoder(out_channels)
+        self.vision = VisionEncoder(out_channels)
         self.fuser = FeatureFuser(d_input=d_input, d_model=d_model, d_feedforward=d_feedforward, num_layers=num_layers,
                                   d_direction=d_direction, d_distance=d_distance, dropout=dropout)
 
     def forward(self, img, camera_pos, camera_front):
-        # img_feature = self.vision(img)
-        img_feature = img
+        img_feature = self.vision(img)
         feature = torch.concatenate([img_feature, camera_pos, camera_front], dim=-1)
         direction, distance = self.fuser(feature)
         return direction, distance

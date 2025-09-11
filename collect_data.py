@@ -10,8 +10,9 @@ ORIGIN = np.array([0, 0, 0], dtype=float)
 
 # 在3D场景中放置一个红色小球和相机，并拍摄一张图像。
 def take_photo(
-        sphere_position_list,  # sphere_position (list or tuple): 小球的中心坐标，如 [x, y, z]。
-        sphere_radius,  # 小球半径
+        cylinder_position_list,
+        cylinder_radius,
+        cylinder_height,
         camera_position,  # camera_position (list or tuple): 相机的位置，如 [x, y, z]。
         focal_point,
         view_up,  # view_up (list or tuple): 定义相机上方的方向向量，如 [0, 0, 1] 表示Z轴向上。
@@ -23,7 +24,7 @@ def take_photo(
         filename  # 输出图像的文件名
     ):
 
-    assert len(sphere_position_list) > 0
+    assert len(cylinder_position_list) > 0
 
     # 创建一个空的绘图器（plotter）
     plotter = pv.Plotter(off_screen=True, window_size=image_size)
@@ -39,9 +40,14 @@ def take_photo(
     )
 
     # 2. 创建红色小球并添加到场景
-    for sphere_position in sphere_position_list:
-        sphere = pv.Sphere(radius=sphere_radius, center=sphere_position, phi_resolution=360, theta_resolution=360)
-        plotter.add_mesh(sphere, color='red')
+    for cylinder_position in cylinder_position_list:
+        cylinder = pv.Cylinder(radius=cylinder_radius, 
+                               height=cylinder_height,
+                               center=cylinder_position,
+                               resolution=360,
+                               direction=(0, 0, 1),
+                               capping=True)
+        plotter.add_mesh(cylinder, color='red')
 
     plane_texture = pv.read_texture(plane_texture_path)
     plane = pv.Plane(center=ORIGIN, direction=(0, 0, 1), i_size=plane_size, j_size=plane_size)
@@ -59,9 +65,9 @@ def take_photo(
     plotter.close()
 
 
-def is_sphere_in_frustum(
-    sphere_position,  # 小球中心坐标 [x, y, z]
-    sphere_radius,    # 小球半径
+def is_cylinder_in_frustum(
+    cylinder_position,  # 小球中心坐标 [x, y, z]
+    cylinder_radius,    # 小球半径
     camera_position,  # 相机位置 [x, y, z]
     focal_point,      # 相机焦点 [x, y, z]
     view_up,          # 相机上方向向量 [x, y, z]
@@ -74,7 +80,7 @@ def is_sphere_in_frustum(
     """
     aspect_ratio = image_size[0] / image_size[1]
     # 将输入转换为 numpy 数组
-    sphere_position = np.array(sphere_position, dtype=float)
+    cylinder_position = np.array(cylinder_position, dtype=float)
     camera_position = np.array(camera_position, dtype=float)
     focal_point = np.array(focal_point, dtype=float)
     view_up = np.array(view_up, dtype=float)
@@ -97,25 +103,25 @@ def is_sphere_in_frustum(
     horizontal_fov = vertical_fov * aspect_ratio
 
     # 计算小球中心到相机的向量
-    sphere_to_camera = sphere_position - camera_position
-    distance_to_sphere = np.linalg.norm(sphere_to_camera)
+    cylinder_to_camera = cylinder_position - camera_position
+    distance_to_cylinder = np.linalg.norm(cylinder_to_camera)
 
     # 如果小球在相机后面，直接返回 False
-    projection = np.dot(sphere_to_camera, camera_direction)
+    projection = np.dot(cylinder_to_camera, camera_direction)
     if projection <= 0:
         return False
 
     # 将小球中心向量投影到相机坐标系
-    sphere_to_camera_normalized = sphere_to_camera / distance_to_sphere
+    cylinder_to_camera_normalized = cylinder_to_camera / distance_to_cylinder
 
     # 计算小球中心相对于相机方向的夹角
-    cos_theta = np.dot(sphere_to_camera_normalized, camera_direction)
+    cos_theta = np.dot(cylinder_to_camera_normalized, camera_direction)
     if cos_theta <= 0:
         return False
     theta = np.arccos(cos_theta)
 
     # 计算小球的角半径（考虑小球半径）
-    angular_radius = np.arcsin(min(sphere_radius / distance_to_sphere, 1.0))
+    angular_radius = np.arcsin(min(cylinder_radius / distance_to_cylinder, 1.0))
 
     # 检查垂直方向是否在视锥内
     vertical_half_fov = vertical_fov / 2
@@ -124,8 +130,8 @@ def is_sphere_in_frustum(
 
     # 检查水平方向
     # 投影到右向量和上向量平面，计算水平角度
-    proj_right = np.dot(sphere_to_camera_normalized, right_vector)
-    proj_up = np.dot(sphere_to_camera_normalized, up_vector)
+    proj_right = np.dot(cylinder_to_camera_normalized, right_vector)
+    proj_up = np.dot(cylinder_to_camera_normalized, up_vector)
     theta_horizontal = np.arctan2(proj_right, cos_theta)
     horizontal_half_fov = horizontal_fov / 2
     if abs(theta_horizontal) > (horizontal_half_fov + angular_radius):
@@ -139,24 +145,25 @@ def take_photo_wrapper(idx, image_dir, state_dir):
     # --- 使用示例 ---
     # 设置参数
     plane_size = 20
-    sphere_radius = 0.6
+    cylinder_radius = 0.6
+    cylinder_height = 0.4
 
     start_idx = random.randint(0, 8)
-    sphere_position_list = []
+    cylinder_position_list = []
     for n in range(start_idx, 9):
         i, j = divmod(n, 3)
         x = -3 + i * 3 + random.uniform(-0.2, 0.2)
         y = -3 + j * 3 + random.uniform(-0.2, 0.2)
-        sphere_position = [x, y, sphere_radius]
-        sphere_position_list.append(sphere_position)
+        cylinder_position = [x, y, cylinder_height * 0.5]
+        cylinder_position_list.append(cylinder_position)
     
-    first_sphere_pos = sphere_position_list[0]
-    camera_pos = first_sphere_pos.copy()
+    first_cylinder_pos = cylinder_position_list[0]
+    camera_pos = first_cylinder_pos.copy()
     camera_pos[0] = camera_pos[0] + random.uniform(-2, 2)
     camera_pos[1] = camera_pos[1] + random.uniform(-6, -4)
-    camera_pos[2] = 2 * sphere_radius + random.uniform(5, 10)
+    camera_pos[2] = cylinder_height + random.uniform(5, 10)
 
-    focal_pos = first_sphere_pos.copy()
+    focal_pos = first_cylinder_pos.copy()
     focal_pos[0] = focal_pos[0] + random.uniform(-1, 1)
     focal_pos[1] = focal_pos[1] + random.uniform(-1, 1)
     focal_pos[2] = 0
@@ -166,9 +173,9 @@ def take_photo_wrapper(idx, image_dir, state_dir):
     image_size = (640, 480)
     view_angle_deg = 60.0  # 垂直视锥角度为30度
 
-    if not is_sphere_in_frustum(
-        sphere_position=first_sphere_pos,  # 小球中心坐标 [x, y, z]
-        sphere_radius=sphere_radius,  # 小球半径
+    if not is_cylinder_in_frustum(
+        cylinder_position=first_cylinder_pos,  # 小球中心坐标 [x, y, z]
+        cylinder_radius=cylinder_radius,  # 小球半径
         camera_position=camera_pos,  # 相机位置 [x, y, z]
         focal_point=focal_pos,  # 相机焦点 [x, y, z]
         view_up=view_up_vec,  # 相机上方向向量 [x, y, z]
@@ -181,16 +188,16 @@ def take_photo_wrapper(idx, image_dir, state_dir):
     image_path = os.path.join(image_dir, f"{idx}.png")
 
     camera_front = compute_direction(start=camera_pos, end=focal_pos).tolist()
-    sphere_dir = compute_direction(start=camera_front, end=first_sphere_pos).tolist()
+    cylinder_dir = compute_direction(start=camera_front, end=first_cylinder_pos).tolist()
 
-    distance = np.linalg.norm(np.array(camera_pos) - np.array(first_sphere_pos)).item()
+    distance = np.linalg.norm(np.array(camera_pos) - np.array(first_cylinder_pos)).item()
 
     data = {
-        "sphere_pos": sphere_position_list[0],
+        "cylinder_pos": first_cylinder_pos,
         "focal_pos": focal_pos,
         "camera_pos": camera_pos,
         "camera_front": camera_front,
-        "sphere_dir": sphere_dir,
+        "cylinder_dir": cylinder_dir,
         "distance": distance
     }
 
@@ -199,8 +206,9 @@ def take_photo_wrapper(idx, image_dir, state_dir):
     save_json(data, json_path)
 
     # 调用函数来完成任务
-    take_photo(sphere_position_list=sphere_position_list,
-               sphere_radius=sphere_radius,
+    take_photo(cylinder_position_list=cylinder_position_list,
+               cylinder_radius=cylinder_radius,
+               cylinder_height=cylinder_height,
                camera_position=camera_pos,
                focal_point=focal_pos,
                view_up=view_up_vec,
