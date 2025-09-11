@@ -36,12 +36,12 @@ def take_photo(
     )
 
     # 2. 创建红色小球并添加到场景
-    for i in range(5):
-        for j in range(5):
-            x = -9 + 3 * i + random.uniform(-0.3, 0.3)
-            y = -9 + 3 * j + random.uniform(-0.3, 0.3)
-            sphere = pv.Sphere(radius=sphere_radius, center=[x, y, 0], phi_resolution=360, theta_resolution=360)
-            plotter.add_mesh(sphere, color='red')
+    for n in range(3, 25):
+        i, j = divmod(n, 5)
+        x = -6 + 3 * i + random.uniform(-0.3, 0.3)
+        y = -6 + 3 * j + random.uniform(-0.3, 0.3)
+        sphere = pv.Sphere(radius=sphere_radius, center=[x, y, 0], phi_resolution=360, theta_resolution=360)
+        plotter.add_mesh(sphere, color='red')
 
     plane = pv.Plane(center=ORIGIN, direction=(0, 0, 1), i_size=plane_size, j_size=plane_size)
     plotter.add_mesh(plane, color='grey')
@@ -61,7 +61,7 @@ def take_photo(
 def take_photo_wrapper(idx, image_dir, state_dir):
     # --- 使用示例 ---
     # 设置参数
-    plane_size = 20
+    plane_size = 30
     sphere_radius = 1
 
     sphere_pos = [
@@ -71,14 +71,14 @@ def take_photo_wrapper(idx, image_dir, state_dir):
     ]  # 小球在原点
 
     camera_pos = [
-        random.uniform(6, 10),
+        random.uniform(8, 10),
         random.uniform(-1, 1),
         sphere_radius * 2 + random.uniform(10, 12)
     ]  # 相机位置
 
     focal_pt = [
-        random.uniform(-2, 2),
-        random.uniform(-2, 2),
+        random.uniform(-10, 5),
+        random.uniform(-5, 10),
         0
     ]  # 相机看向的位置
 
