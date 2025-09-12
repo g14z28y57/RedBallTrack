@@ -181,18 +181,18 @@ def take_photo_wrapper(idx, image_dir, state_dir):
     first_cylinder_pos = cylinder_position_list[0]
     
     focal_pos = [0, 0, 0]
-    focal_pos[0] = first_cylinder_pos[0] + random.uniform(-3, 3)
-    focal_pos[1] = first_cylinder_pos[1] + random.uniform(-3, 3)
+    focal_pos[0] = first_cylinder_pos[0] + 3 * random.uniform(-1, 1)
+    focal_pos[1] = first_cylinder_pos[1] + 3 * random.uniform(-1, 1)
     focal_pos[2] = 0
     
     camera_pos = [0, 0, 0]
-    camera_pos[0] = focal_pos[0] + random.uniform(-1, 1)
     d = random.uniform(3, 15)
-    theta = math.radians(random.uniform(10, 90))
-    delta_y = -d * math.cos(theta)
-    delta_z = d * math.sin(theta)
-    camera_pos[1] = focal_pos[1] + delta_y
-    camera_pos[2] = cylinder_height + delta_z
+    theta = math.radians(random.uniform(15, 90))
+    dy = d * math.cos(theta)
+    dz = d * math.sin(theta)
+    camera_pos[0] = focal_pos[0] + 0.2 * dy * random.uniform(-1, 1)
+    camera_pos[1] = focal_pos[1] - dy
+    camera_pos[2] = cylinder_height + dz
 
     view_up_vec = [0, 0, 1]  # Z轴向上
     light_pos = [0, 0, 100]
