@@ -21,7 +21,8 @@ def take_photo(
         image_size,  # 图像尺寸
         plane_size,  # 地面宽度
         plane_texture_path,  # 地板贴图
-        filename  # 输出图像的文件名
+        filename,  # 输出图像的文件名
+        debug=False
     ):
 
     assert len(cylinder_position_list) > 0
@@ -62,22 +63,22 @@ def take_photo(
 
     # 3. 拍摄图像
     plotter.screenshot(filename=filename)
-    print(f"图像已保存到 {filename}")
     
-    # 创建一些点来标记
-    label_position_list = []
-    labels = []
-    for idx, cylinder_position in enumerate(cylinder_position_list):
-        label_position = cylinder_position.copy()
-        label_position[2] += cylinder_height
-        label_position_list.append(label_position)
-        labels.append(f"{idx}")
-    points = np.array(cylinder_position_list)
-    point_cloud = pv.PolyData(points)
-    plotter.add_mesh(point_cloud, color='red', render_points_as_spheres=True, point_size=1)
-    # 在这些点上添加标签
-    plotter.add_point_labels(points, labels, font_size=20)
-    plotter.screenshot(filename=filename.split(".")[0] + "_debug.png")
+    if debug:
+        # 创建一些点来标记
+        label_position_list = []
+        labels = []
+        for idx, cylinder_position in enumerate(cylinder_position_list):
+            label_position = cylinder_position.copy()
+            label_position[2] += cylinder_height
+            label_position_list.append(label_position)
+            labels.append(f"{idx}")
+        points = np.array(cylinder_position_list)
+        point_cloud = pv.PolyData(points)
+        plotter.add_mesh(point_cloud, color='red', render_points_as_spheres=True, point_size=1)
+        # 在这些点上添加标签
+        plotter.add_point_labels(points, labels, font_size=20)
+        plotter.screenshot(filename=filename.split(".")[0] + "_debug.png")
 
     plotter.close()
 
@@ -165,42 +166,36 @@ def take_photo_wrapper(idx, image_dir, state_dir):
     cylinder_radius = 1.0
     cylinder_height = 0.5
     
-    center_x = random.uniform(-5, 5)
-    center_y = random.uniform(-5, 5)
+    center_x = random.uniform(-4, 4)
+    center_y = random.uniform(-4, 4)
     start_idx = random.randint(0, 8)
     
     gap = 3.5
     cylinder_position_list = []
     for n in range(start_idx, 9):
         j, i = divmod(n, 3)
-        x = center_x - gap + j * gap + random.uniform(-0.3, 0.3)
-        y = center_y - gap + i * gap + random.uniform(-0.3, 0.3)
+        x = center_x - gap + j * gap + random.uniform(-0.5, 0.5)
+        y = center_y - gap + i * gap + random.uniform(-0.5, 0.5)
         cylinder_position = [x, y, cylinder_height * 0.5]
         cylinder_position_list.append(cylinder_position)
     
-    first_cylinder_pos = cylinder_position_list[0]
+    first_pos = cylinder_position_list[0]
     
-    focal_pos = [0, 0, 0]
-    focal_pos[0] = first_cylinder_pos[0] + 3 * random.uniform(-1, 1)
-    focal_pos[1] = first_cylinder_pos[1] + 3 * random.uniform(-1, 1)
-    focal_pos[2] = 0
-    
-    camera_pos = [0, 0, 0]
-    d = random.uniform(3, 15)
-    theta = math.radians(random.uniform(15, 90))
-    dy = d * math.cos(theta)
-    dz = d * math.sin(theta)
-    camera_pos[0] = focal_pos[0] + 0.2 * dy * random.uniform(-1, 1)
-    camera_pos[1] = focal_pos[1] - dy
-    camera_pos[2] = cylinder_height + dz
+    camera_h = random.uniform(3, 15)
+    camera_z = first_pos[2] + camera_h
+    camera_x = first_pos[0] + random.uniform(-camera_h, camera_h)
+    camera_y = first_pos[1] + 0.8 * random.uniform(-camera_h, camera_h)
 
-    view_up_vec = [0, 0, 1]  # Z轴向上
+    focal_pos = [camera_x, camera_y, 0]
+    camera_pos = [camera_x, camera_y, camera_z]
+    
+    view_up_vec = [0, 1, 0]
     light_pos = [0, 0, 100]
     image_size = (640, 480)
     view_angle_deg = 90.0  # 垂直视锥角度为30度
 
     if not is_cylinder_in_frustum(
-        cylinder_position=first_cylinder_pos,  # 小球中心坐标 [x, y, z]
+        cylinder_position=first_pos,  # 小球中心坐标 [x, y, z]
         cylinder_radius=cylinder_radius,  # 小球半径
         camera_position=camera_pos,  # 相机位置 [x, y, z]
         focal_point=focal_pos,  # 相机焦点 [x, y, z]
@@ -213,13 +208,15 @@ def take_photo_wrapper(idx, image_dir, state_dir):
     os.makedirs(image_dir, exist_ok=True)
     image_path = os.path.join(image_dir, f"{idx}.png")
 
-    camera_front = compute_direction(start=camera_pos, end=focal_pos).tolist()
-    cylinder_dir = compute_direction(start=camera_front, end=first_cylinder_pos).tolist()
-
-    distance = np.linalg.norm(np.array(camera_pos) - np.array(first_cylinder_pos)).item()
+    camera_front = [0, 0, -1]
+    cylinder_dir = compute_direction(start=camera_pos, end=first_pos).tolist()
+    
+    # print(cylinder_dir)
+    
+    distance = np.linalg.norm(np.array(camera_pos) - np.array(first_pos)).item()
 
     data = {
-        "cylinder_pos": first_cylinder_pos,
+        "cylinder_pos": first_pos,
         "focal_pos": focal_pos,
         "camera_pos": camera_pos,
         "camera_front": camera_front,
@@ -244,6 +241,8 @@ def take_photo_wrapper(idx, image_dir, state_dir):
                plane_size=plane_size,
                plane_texture_path="plane.jpg",
                filename=image_path)
+    
+    # print(f"图像已保存到 {image_path}")
 
     return True
 
@@ -252,6 +251,8 @@ def main(args):
     idx = args.start_index
     end_idx = idx + args.num
     while idx < end_idx:
+        if idx % 100 == 0:
+            print(idx)
         if take_photo_wrapper(idx=idx, image_dir=args.image_dir, state_dir=args.state_dir):
             idx += 1
 

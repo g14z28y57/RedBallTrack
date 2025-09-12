@@ -3,15 +3,22 @@
     "batch_size": 64,
     "num_epochs": 1000,
     "log_every": 500,
-    "save_every": 10000,
-    "lr": 1e-4
+    "save_every": 5000,
+    "lr": 1e-4,
+    "model_checkpoint": "direction_model.pth",
+    "optimizer_checkpoint": "optimizer.pth",
+    "num_data": 10000
   },
   "model": {
     "output_layer": "layer4",
     "d_input": 906,
-    "d_model": 128,
-    "d_feedforward": 512,
+    "d_model": 256,
+    "d_feedforward": 1024,
     "out_channels": 3,
     "num_layers": 4
+  },
+  "device": "cuda",
+  "test": {
+    "num_data": 1000
   }
 }

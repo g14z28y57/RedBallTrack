@@ -55,33 +55,43 @@ class ResBlock(nn.Module):
 
 
 class FeatureFuser(nn.Module):
-    def __init__(self, d_input, d_model, d_feedforward, num_layers, d_direction=3, d_distance=1, dropout=0.3):
+    def __init__(self, d_input, d_model, d_feedforward, num_layers, 
+                 d_xy=2, d_z=1, d_distance=1, dropout=0.3):
         super().__init__()
         self.input_layer = nn.Linear(d_input, d_model)
         self.layers = nn.ModuleList([ResBlock(d_model, d_feedforward, dropout=dropout) for _ in range(num_layers)])
-        self.direction_head = nn.Linear(d_model, d_direction)
+        self.xy_head = nn.Linear(d_model, d_xy)
+        self.z_head = nn.Linear(d_model, d_z)
         self.distance_head = nn.Linear(d_model, d_distance)
 
-    def forward(self, x):
-        x = self.input_layer(x)
+    def forward(self, c):
+        c = self.input_layer(c)
         for layer in self.layers:
-            x = layer(x)
-        direction = self.direction_head(x)
-        distance = self.distance_head(x)
-        direction = nn.Hardtanh()(direction)
-        distance = nn.ReLU()(distance)
-        return direction, distance
+            c = layer(c)
+        xy = self.xy_head(c)
+        z = self.z_head(c)
+        d = self.distance_head(c)
+        xy = nn.Hardtanh()(xy)
+        z = -nn.Hardsigmoid()(z)
+        d = nn.ReLU()(d)
+        return xy, z, d
 
 
 class DirectionModel(nn.Module):
-    def __init__(self, d_input, d_model, d_feedforward, out_channels, num_layers, d_direction=3, d_distance=1, dropout=0.3):
+    def __init__(self, d_input, d_model, d_feedforward, out_channels, 
+                 num_layers, d_xy=2, d_z=1, d_distance=1, dropout=0.3):
         super().__init__()
         self.vision = VisionEncoder(out_channels)
-        self.fuser = FeatureFuser(d_input=d_input, d_model=d_model, d_feedforward=d_feedforward, num_layers=num_layers,
-                                  d_direction=d_direction, d_distance=d_distance, dropout=dropout)
+        self.fuser = FeatureFuser(d_input=d_input, d_model=d_model, 
+                                  d_feedforward=d_feedforward, 
+                                  num_layers=num_layers,
+                                  d_xy=d_xy, d_z=d_z, 
+                                  d_distance=d_distance, 
+                                  dropout=dropout)
 
     def forward(self, img, camera_pos, camera_front):
         img_feature = self.vision(img)
         feature = torch.concatenate([img_feature, camera_pos, camera_front], dim=-1)
-        direction, distance = self.fuser(feature)
-        return direction, distance
+        xy, z, d = self.fuser(feature)
+        xyz = torch.concatenate([xy, z], dim=-1)
+        return xyz, d

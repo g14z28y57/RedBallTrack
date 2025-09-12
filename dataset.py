@@ -8,10 +8,8 @@ from tqdm import trange
 
 
 class DirectionDataset(Dataset):
-    def __init__(self, state_dir, image_dir, cache_path, image_encoder=None, device=None):
-        length1 = len(os.listdir(state_dir))
-        length2 = len(os.listdir(image_dir))
-        length = min(length1, length2)
+    def __init__(self, state_dir, image_dir, cache_path, num_data, image_encoder=None, device=None):
+        length = num_data
         self.cache_path = cache_path
         # length = 100
         if os.path.exists(cache_path):

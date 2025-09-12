@@ -31,17 +31,22 @@ def test(config):
     out_layer = config["model"]["output_layer"]
     out_channels = config["model"]["out_channels"]
     num_layers = config["model"]["num_layers"]
+    
+    checkpoint_pth = config["training"]["model_checkpoint"]
+    device = config["device"]
+    num_data = config["test"]["num_data"]
 
     backbone = VisionBackbone(out_layer=out_layer).to(device)
     dataset = DirectionDataset(state_dir="state_test",
                                image_dir="image_test",
                                cache_path="data_test.pkl",
+                               num_data=num_data,
                                image_encoder=backbone,
                                device=device)
     dataset.plot_distance_hist()
     dataloader = DataLoader(dataset, shuffle=True, batch_size=batch_size)
 
-    loss_fn_dir = torch.nn.MSELoss()  # For direction, which is a regression task
+    loss_fn_dir = torch.nn.L1Loss()  # For direction, which is a regression task
     loss_fn_dist = torch.nn.L1Loss()  # For distance, which is also regression
 
     model = DirectionModel(d_input=d_input,
@@ -50,7 +55,6 @@ def test(config):
                            out_channels=out_channels,
                            num_layers=num_layers)
 
-    checkpoint_pth = "direction_model.pth"
     assert os.path.exists(checkpoint_pth)
     model.load_state_dict(torch.load(checkpoint_pth))
     model = model.to(device)
