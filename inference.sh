@@ -1,15 +1,3 @@
-python inference.py --id 0
-python inference.py --id 1
-python inference.py --id 2
-python inference.py --id 3
-python inference.py --id 4
-python inference.py --id 5
-python inference.py --id 6
-python inference.py --id 7
-python inference.py --id 8
-python inference.py --id 9
-python inference.py --id 10
-python inference.py --id 11
-python inference.py --id 12
-python inference.py --id 13
-python inference.py --id 14
+for ((i=5; i<=20; i++)); do
+    python inference.py --id $i
+done
