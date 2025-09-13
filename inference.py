@@ -133,7 +133,7 @@ def run(config, image_dir, state_dir, num_steps):
                    debug=False)
         
         camera_pos, focal_pos, out_direction = step_one(backbone, model, device, img_path, camera_pos, 
-                                                       focal_pos, camera_front, step_distance=0.05)
+                                                       focal_pos, camera_front, step_distance=0.1)
         
         # print(np.linalg.norm(cylinder_dir - out_direction, ord=1))
 

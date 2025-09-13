@@ -67,7 +67,6 @@ def train(config):
             distance = distance.to(device)
 
             loss_dir = loss_fn_dir(out_dir, cylinder_dir)
-
             loss_dist = loss_fn_dist(out_dist, distance)
             total_loss = loss_dir
             losses_dir.append(loss_dir.item())

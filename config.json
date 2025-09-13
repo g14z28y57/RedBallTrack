@@ -4,18 +4,18 @@
     "num_epochs": 1000,
     "log_every": 500,
     "save_every": 5000,
-    "lr": 1e-4,
+    "lr": 1e-3,
     "model_checkpoint": "direction_model.pth",
     "optimizer_checkpoint": "optimizer.pth",
-    "num_data": 10000
+    "num_data": 60000
   },
   "model": {
     "output_layer": "layer4",
     "d_input": 906,
-    "d_model": 256,
-    "d_feedforward": 1024,
+    "d_model": 128,
+    "d_feedforward": 512,
     "out_channels": 3,
-    "num_layers": 4
+    "num_layers": 5
   },
   "device": "cuda",
   "test": {

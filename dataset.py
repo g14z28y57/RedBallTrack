@@ -9,9 +9,8 @@ from tqdm import trange
 
 class DirectionDataset(Dataset):
     def __init__(self, state_dir, image_dir, cache_path, num_data, image_encoder=None, device=None):
-        length = num_data
         self.cache_path = cache_path
-        # length = 100
+
         if os.path.exists(cache_path):
             data = read_pickle(cache_path)
             self.state_list = data["state"]
@@ -19,18 +18,23 @@ class DirectionDataset(Dataset):
         else:
             self.state_list = []
             self.image_list = []
-            for idx in trange(length):
-                state_path = os.path.join(state_dir, f"{idx}.json")
-                state = read_json(state_path)
-                image_path = os.path.join(image_dir, f"{idx}.png")
-                image = cv2.imread(image_path) / 255.0 * 2.0 - 1.0
-                image = np.transpose(image, [2, 0, 1])
-                if image_encoder is not None:
-                    image = torch.tensor(image, dtype=torch.float, device=device).unsqueeze(0)
-                    image = image_encoder(image).squeeze(0).cpu().numpy()
-                self.state_list.append(state)
-                self.image_list.append(image)
+
+        start_idx = len(self.state_list)
+        for idx in trange(start_idx, num_data):
+            state_path = os.path.join(state_dir, f"{idx}.json")
+            state = read_json(state_path)
+            image_path = os.path.join(image_dir, f"{idx}.png")
+            image = cv2.imread(image_path) / 255.0 * 2.0 - 1.0
+            image = np.transpose(image, [2, 0, 1])
+            if image_encoder is not None:
+                image = torch.tensor(image, dtype=torch.float, device=device).unsqueeze(0)
+                image = image_encoder(image).squeeze(0).cpu().numpy()
+            self.state_list.append(state)
+            self.image_list.append(image)
+
+        if start_idx < num_data:
             self.cache()
+
         print(f"{len(self.state_list)} data loaded")
 
     def __getitem__(self, idx):

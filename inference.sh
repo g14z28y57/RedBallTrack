@@ -1,3 +1,3 @@
-for ((i=5; i<=20; i++)); do
+for ((i=1; i<=20; i++)); do
     python inference.py --id $i
 done

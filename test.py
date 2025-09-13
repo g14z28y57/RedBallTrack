@@ -77,6 +77,10 @@ def test(config):
         loss_dir_list.append(loss_dir)
         loss_dist_list.append(loss_dist)
 
+    avg_loss_dir = sum(loss_dir_list) / len(loss_dir_list)
+    avg_loss_dist = sum(loss_dist_list) / len(loss_dist_list)
+    print(f"direction loss: {avg_loss_dir:.4f}, distance loss: {avg_loss_dist:.4f}")
+
     print("stats of direction loss")
     compute_stat(loss_dir_list)
     plot_hist(loss_dir_list, "loss_direction.png")
