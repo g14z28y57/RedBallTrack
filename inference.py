@@ -7,6 +7,7 @@ import random
 import math
 from util import compute_direction, save_json, read_json
 from collect_data import take_photo
+from tqdm import trange
 
 
 def create_model(config):
@@ -63,31 +64,35 @@ def run(backbone, model, device, image_dir, state_dir, num_steps):
     plane_size = 20
     cylinder_radius = 1.0
     cylinder_height = 0.5
-    
-    center_x = random.uniform(-4, 4)
-    center_y = random.uniform(-4, 4)
+
+    center_x = 4 * random.uniform(-1, 1)
+    center_y = 4 * random.uniform(-1, 1)
     start_idx = random.randint(0, 8)
-    
+
     gap = 3.5
     cylinder_position_list = []
     for n in range(start_idx, 9):
         j, i = divmod(n, 3)
-        x = center_x - gap + j * gap + random.uniform(-0.5, 0.5)
-        y = center_y - gap + i * gap + random.uniform(-0.5, 0.5)
+        x = center_x - gap + j * gap + 0.5 * random.uniform(-1, 1)
+        y = center_y - gap + i * gap + 0.5 * random.uniform(-1, 1)
         cylinder_position = [x, y, cylinder_height * 0.5]
         cylinder_position_list.append(cylinder_position)
-    
-    first_pos = cylinder_position_list[0]
-    
-    camera_h = random.uniform(3, 15)
-    camera_z = first_pos[2] + camera_h
-    camera_x = first_pos[0] + random.uniform(-camera_h, camera_h)
-    camera_y = first_pos[1] + 0.8 * random.uniform(-camera_h, camera_h)
 
-    focal_pos = [camera_x, camera_y, 0]
+    first_pos = cylinder_position_list[0]
+
+    camera_h = random.uniform(1, 15)
+    camera_z = first_pos[2] + camera_h
+    camera_x = first_pos[0] + camera_h * random.uniform(-1, 1)
+    camera_y = first_pos[1] + 0.8 * camera_h * random.uniform(-1, 1)
+
+    delta = 0.2 * camera_h * random.uniform(-1, 1)
+    theta = math.radians(90 + 10 * random.uniform(-1, 1))
+    cos_theta = math.cos(theta)
+    sin_theta = math.sin(theta)
+    focal_pos = [camera_x - delta * sin_theta, camera_y + delta * cos_theta, 0]
     camera_pos = [camera_x, camera_y, camera_z]
-    
-    view_up_vec = [0, 1, 0]
+
+    view_up_vec = [cos_theta, sin_theta, 0]
     light_pos = [0, 0, 100]
     image_size = (640, 480)
     view_angle_deg = 90.0  # 垂直视锥角度为30度
@@ -141,7 +146,7 @@ def main(num_episodes):
     config = read_json(config_path)
     backbone, model, device = create_model(config)
     num_steps = 300
-    for idx in range(num_episodes):
+    for idx in trange(num_episodes):
         image_dir = f"inference/inference_{idx}"
         state_dir = f"inference/states_{idx}"
         os.makedirs(image_dir, exist_ok=True)
