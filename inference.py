@@ -57,7 +57,7 @@ def step_one(backbone, model, device, img_path, camera_pos, focal_pos, camera_fr
     
 
 @torch.inference_mode()
-def run(config, image_dir, state_dir, num_steps):
+def run(backbone, model, device, image_dir, state_dir, num_steps):
     # 环境配置
     plane_texture_path = "plane.jpg"
     plane_size = 20
@@ -91,8 +91,6 @@ def run(config, image_dir, state_dir, num_steps):
     light_pos = [0, 0, 100]
     image_size = (640, 480)
     view_angle_deg = 90.0  # 垂直视锥角度为30度
-
-    backbone, model, device = create_model(config)
     
     camera_pos = np.array(camera_pos)
     focal_pos = np.array(focal_pos)
@@ -138,20 +136,22 @@ def run(config, image_dir, state_dir, num_steps):
         # print(np.linalg.norm(cylinder_dir - out_direction, ord=1))
 
 
-def main(args):
+def main(num_episodes):
     config_path = "config.json"
     config = read_json(config_path)
-    image_dir = f"inference_{args.id}"
-    state_dir = "inference_states"
-    os.makedirs(image_dir, exist_ok=True)
-    os.makedirs(state_dir, exist_ok=True)
+    backbone, model, device = create_model(config)
     num_steps = 300
-    run(config, image_dir, state_dir, num_steps)
-    print(args.id)
+    for idx in range(num_episodes):
+        image_dir = f"inference/inference_{idx}"
+        state_dir = f"inference/states_{idx}"
+        os.makedirs(image_dir, exist_ok=True)
+        os.makedirs(state_dir, exist_ok=True)
+        run(backbone, model, device, image_dir, state_dir, num_steps)
     
     
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument("--id", type=int)
-    main(args=parser.parse_args())
+    parser.add_argument("--num", type=int)
+    args = parser.parse_args()
+    main(num_episodes=args.num)
